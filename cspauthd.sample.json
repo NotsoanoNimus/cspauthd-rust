@@ -1,0 +1,144 @@
+{
+    "global": {
+        "i_accept_the_risks": true,
+        "map_ipv4_addresses": true,
+        "skip_invalid_users": false,
+        "default_mode": "stealthy",
+        "default_log_level": "normal",
+        "default_validity_window": 60,
+        "default_replay_protection": true,
+        "default_generic_action": "/opt/generic_action.py"
+    },
+
+    "instances": [
+        {
+            "id": "public",
+            "address": "::",
+            "port": 41937
+        },
+        {
+            "id": "local-debug",
+            "address": "::1",
+            "port": 8769,
+            "log_level": "debug",
+            "mode": "noisy"
+        },
+        {
+            "id": "on-net",
+            "address": "10.23.64.46",
+            "port": 12701
+        }
+    ],
+
+    "users": [
+        {
+            "name": "zack",
+            "runas": {
+                "uid": null,
+                "username": "zpuhl"
+            },
+            "authentication": {
+                "auth_type": "public_key",
+                "path": null,
+                "raw": "some-base64-string"
+            },
+            "authorizations": [
+                {
+                    "action_id": 1,
+                    "options": [ "any" ]
+                },
+                {
+                    "action_id": 22,
+                    "options": [ "1-400", "5445", "999" ]
+                },
+                {
+                    "action_id": 777,
+                    "options": [ "1024-65534" ]
+                }
+            ]
+        },
+        {
+            "name": "alice",
+            "runas": {
+                "uid": 1044,
+                "username": null
+            },
+            "authentication": {
+                "auth_type": "zero_knowledge_proof",
+                "salt": {
+                    "source": "epoch",
+                    "interval": 30
+                },
+                "root": "KDF-derived-hash",
+                "hash_type": "sha_256",
+                "iterations": 1024
+            },
+            "authorizations": [
+                {
+                    "action_id": 777,
+                    "options": [ "8080" ]
+                }
+            ]
+        }
+    ],
+
+    "actions": [
+        {
+            "id": 1,
+            "cmd": "/usr/bin/logger \"Hello, world!\"",
+            "lock_type": "none",
+            "fork": false,
+            "filters": [],
+            "instance_ids": [ "local-debug" ]
+        },
+        {
+            "id": 22,
+            "cmd": "ssh -p 22222 -i /opt/ssh/mykey root@my.example.com \"/bin/bash /opt/doactions.sh [[OPTION]]\"",
+            "lock_type": "user",
+            "fork": true,
+            "filters": [],
+            "instance_ids": []
+        },
+        {
+            "id": 32,
+            "cmd": "/bin/bash /root/runscript.sh [[OPTION]]",
+            "lock_type": "user",
+            "fork": false,
+            "filters": [],
+            "instance_ids": []
+        },
+        {
+            "id": 8445,
+            "cmd": "[[ \"[[IPFAM]]\" == \"6\" ]] && FAM=6 || FAM=\"\"; sudo /bin/ip${FAM}tables -I INPUT --src [[SRCIP]] -p tcp --dport [[OPTION]] -j ACCEPT",
+            "lock_type": "global",
+            "fork": false,
+            "filters": [],
+            "instance_ids": []
+        },
+        {
+            "id": 8446,
+            "cmd": "[[ \"[[IPFAM]]\" == \"6\" ]] && FAM=6 || FAM=\"\"; sudo /bin/ip${FAM}tables -I INPUT --src [[SRCIP]] -p udp --dport [[OPTION]] -j ACCEPT",
+            "lock_type": "global",
+            "fork": false,
+            "filters": [],
+            "instance_ids": []
+        },
+        {
+            "id": 777,
+            "cmd": "sudo /opt/knock-knock.sh \"[[SRCIP]]\" \"[[OPTION]]\" \"[[DATA]]\" tcp \"blahblah\"",
+            "lock_type": "global",
+            "fork": true,
+            "filters": [
+                {
+                    "token": "DATA",
+                    "users": [],
+                    "user_enforcement": null,
+                    "match": "^(\\d+)$",
+                    "replace": "$1",
+                    "required": true
+                }
+            ],
+            "instance_ids": []
+        }
+    ]
+}
